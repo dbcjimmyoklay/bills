@@ -1,0 +1,43 @@
+name: 每日繳費提醒
+
+on:
+  schedule:
+    - cron: '55 4 * * *'   # 台灣時間 12:55 啟動，約 13:00 送達（GitHub 用 UTC）
+  workflow_dispatch:
+    inputs:
+      test:
+        description: '測試模式（沒有待繳也發一則）'
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-save web-push@3.6.7
+      - name: 發送推播
+        run: node remind.js
+        env:
+          GAS_URL: ${{ secrets.GAS_URL }}
+          TOKEN: ${{ secrets.TOKEN }}
+          VAPID_PUBLIC: ${{ secrets.VAPID_PUBLIC }}
+          VAPID_PRIVATE: ${{ secrets.VAPID_PRIVATE }}
+          SITE: https://${{ github.repository_owner }}.github.io
+          TEST: ${{ inputs.test }}
+      # 每月 1 號自動更新一次檔案，避免 GitHub 因為 60 天沒動靜而停掉排程
+      - name: 保持排程啟用
+        if: github.event_name == 'schedule'
+        run: |
+          if [ "$(TZ=Asia/Taipei date +%d)" = "01" ]; then
+            TZ=Asia/Taipei date > .keepalive
+            git config user.name "github-actions[bot]"
+            git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+            git add .keepalive && git commit -m "keepalive" && git push || true
+          fi
