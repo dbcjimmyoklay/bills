@@ -1,0 +1,570 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>繳費提醒</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="繳費">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#F4EFE6" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#15130F" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Noto+Serif+TC:wght@600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#F4EFE6; --card:#FBF8F2; --ink:#1F1B16; --ink2:#4A4339; --muted:#8C8375; --line:#E4DCCE;
+  --seal:#B8322A; --seal-soft:#F3DCD6; --amber:#A8701A; --amber-soft:#F3E6CC; --ok:#3E6B4E; --ok-soft:#DCE8DF;
+  --shadow:0 1px 0 rgba(31,27,22,.04), 0 8px 24px -14px rgba(31,27,22,.25);
+  --serif:"Noto Serif TC","Songti TC",serif; --num:"Fraunces",Georgia,serif;
+  --sans:-apple-system,"PingFang TC","Noto Sans TC",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root{--paper:#15130F; --card:#1E1B16; --ink:#EFE8DC; --ink2:#C9C0B1; --muted:#968D7F; --line:#2E2A23;
+    --seal:#DB4B3C; --seal-soft:#3A1E1A; --amber:#D9A04A; --amber-soft:#33281A; --ok:#7FB08E; --ok-soft:#1D2B22;
+    --shadow:0 1px 0 rgba(0,0,0,.3), 0 10px 24px -14px rgba(0,0,0,.6);}
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+body{min-height:100vh;padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 96px)}
+.wrap{max-width:520px;margin:0 auto}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+.hidden{display:none!important}
+
+/* 頂部 */
+.top{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:14px;letter-spacing:.04em}
+.iconbtn{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--muted)}
+.iconbtn:active{background:var(--line)}
+.hero{margin:18px 0 26px;display:flex;align-items:flex-end;gap:14px}
+.hero .n{font-family:var(--num);font-size:88px;line-height:.82;font-weight:400;letter-spacing:-.04em;font-variant-numeric:lining-nums}
+.hero .t{font-family:var(--serif);font-weight:800;font-size:26px;line-height:1.2;padding-bottom:4px}
+.hero .t small{display:block;font-family:var(--sans);font-weight:400;font-size:14px;color:var(--muted);margin-top:4px}
+.hero.clear .n{color:var(--ok)}
+.sync{font-size:12px;color:var(--muted)}
+
+h2{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--muted);letter-spacing:.12em;margin:30px 0 12px;display:flex;align-items:center;gap:10px}
+h2::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* 待繳卡片 */
+.bill{position:relative;background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:16px 16px 14px;margin-bottom:12px;display:grid;grid-template-columns:64px 1fr;gap:14px;overflow:hidden}
+.bill::before{content:"";position:absolute;left:0;top:16px;bottom:16px;width:3px;border-radius:0 3px 3px 0;background:var(--c,var(--seal))}
+.date{text-align:center;border-right:1px solid var(--line);padding-right:12px}
+.date .m{font-size:12px;color:var(--muted);letter-spacing:.06em}
+.date .d{font-family:var(--num);font-size:40px;line-height:1;margin:2px 0 3px;font-weight:600}
+.date .l{font-size:11px;color:var(--muted)}
+.info{min-width:0}
+.name{font-family:var(--serif);font-weight:800;font-size:19px;line-height:1.3;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.meta{font-size:13px;color:var(--muted);margin-top:3px}
+.amt{font-family:var(--num);font-size:15px;color:var(--ink2)}
+.chip{display:inline-block;font-family:var(--sans);font-size:12px;font-weight:600;padding:3px 9px;border-radius:999px;background:var(--line);color:var(--ink2)}
+.chip.warn{background:var(--amber-soft);color:var(--amber)}
+.chip.hot{background:var(--seal-soft);color:var(--seal)}
+.chip.over{background:var(--seal);color:#fff}
+.pay{grid-column:1/-1;margin-top:4px;height:46px;border-radius:14px;background:var(--ink);color:var(--paper);font-weight:600;font-size:16px;letter-spacing:.08em;display:flex;align-items:center;justify-content:center;gap:8px;transition:transform .12s}
+.pay:active{transform:scale(.98)}
+.stamp{position:absolute;right:22px;top:50%;width:92px;height:92px;margin-top:-58px;border:3px solid var(--seal);border-radius:50%;color:var(--seal);font-family:var(--serif);font-weight:800;font-size:24px;display:grid;place-items:center;opacity:0;transform:scale(1.8) rotate(-24deg);pointer-events:none}
+.stamp::after{content:"";position:absolute;inset:5px;border:1px solid var(--seal);border-radius:50%}
+.bill.stamped .stamp{animation:stamp .45s cubic-bezier(.2,1.6,.4,1) forwards}
+.bill.stamped{animation:fade .4s .75s forwards}
+@keyframes stamp{to{opacity:.92;transform:scale(1) rotate(-14deg)}}
+@keyframes fade{to{opacity:0;transform:translateY(-6px)}}
+
+/* 全部繳清 */
+.allclear{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:26px 20px;text-align:center;color:var(--muted);font-size:14px}
+.allclear b{display:block;font-family:var(--serif);font-size:20px;color:var(--ok);margin-bottom:4px}
+
+/* 貸款進度 */
+.loan{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:18px 16px;margin-bottom:12px}
+.loan .row{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.loan .big{font-family:var(--num);font-size:40px;line-height:1;font-weight:600}
+.loan .big small{font-size:18px;color:var(--muted);font-weight:400}
+.bar{height:8px;background:var(--line);border-radius:99px;margin:14px 0 10px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--seal);border-radius:99px;transition:width .5s}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-size:12px;color:var(--muted)}
+.kv b{display:block;font-family:var(--num);font-weight:600;font-size:15px;color:var(--ink);margin-top:2px}
+.grid{display:grid;grid-template-columns:34px repeat(12,1fr);gap:5px;margin-top:16px;align-items:center}
+.grid .yl{font-family:var(--num);font-size:11px;color:var(--muted)}
+.grid .mh{font-size:9px;color:var(--muted);text-align:center}
+.cell.void{background:transparent}
+.cell{aspect-ratio:1;border-radius:5px;background:var(--line);position:relative}
+.cell.paid{background:var(--seal)}
+.cell.now{outline:2px solid var(--ink);outline-offset:1px}
+.gridwrap{padding-top:2px}
+.hint{font-size:12px;color:var(--muted);margin-top:10px}
+
+/* 其他項目 */
+.list{background:var(--card);border-radius:20px;box-shadow:var(--shadow);overflow:hidden}
+.item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.item:last-child{border-bottom:0}
+.item:active{background:var(--line)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--c,var(--seal));flex:none}
+.item .nm{font-weight:600;font-size:16px}
+.item .sub{font-size:12px;color:var(--muted);margin-top:2px}
+.item .st{margin-left:auto;font-size:12px;color:var(--ok);white-space:nowrap}
+.item .st.wait{color:var(--muted)}
+
+/* 底部 */
+.dock{position:fixed;left:0;right:0;bottom:0;padding:12px 16px calc(env(safe-area-inset-bottom) + 12px);background:linear-gradient(to top,var(--paper) 65%,transparent)}
+.dock .in{max-width:520px;margin:0 auto;display:flex;gap:10px}
+.dock button{flex:1;height:50px;border-radius:16px;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:center;gap:8px}
+.add{background:var(--card);box-shadow:var(--shadow);border:1px solid var(--line)}
+.bell{background:var(--seal);color:#fff}
+.bell.on{background:var(--card);color:var(--ok);border:1px solid var(--line);box-shadow:var(--shadow)}
+
+.banner{background:var(--amber-soft);color:var(--amber);border-radius:14px;padding:12px 14px;font-size:13px;line-height:1.55;margin-bottom:6px}
+
+/* 底部彈出 */
+.sheet-bg{position:fixed;inset:0;background:rgba(20,16,10,.38);opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
+.sheet{visibility:hidden;position:fixed;left:0;right:0;bottom:0;z-index:11;background:var(--paper);border-radius:24px 24px 0 0;padding:10px 18px calc(env(safe-area-inset-bottom) + 18px);transform:translateY(105%);transition:transform .28s cubic-bezier(.2,.8,.2,1);max-height:92vh;overflow:auto}
+.open .sheet-bg{opacity:1;pointer-events:auto}
+.open .sheet{transform:none;visibility:visible}
+.sheet .in{max-width:520px;margin:0 auto}
+.grab{width:40px;height:5px;border-radius:9px;background:var(--line);margin:0 auto 14px}
+.sheet h3{font-family:var(--serif);font-size:22px;margin:0 0 16px}
+.f{margin-bottom:14px}
+.f label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+.f input,.f select{width:100%;height:46px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-size:16px;padding:0 12px;-webkit-appearance:none;appearance:none}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{flex:1;height:38px;border-radius:9px;font-size:14px;color:var(--muted)}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.sw{display:flex;gap:10px}
+.sw button{width:32px;height:32px;border-radius:50%;background:var(--c)}
+.sw button.on{outline:2px solid var(--ink);outline-offset:2px}
+.preview{font-size:13px;color:var(--ink2);background:var(--card);border-radius:12px;padding:10px 12px;margin:4px 0 16px;line-height:1.6}
+.primary{width:100%;height:50px;border-radius:14px;background:var(--ink);color:var(--paper);font-weight:600;font-size:16px}
+.ghost{width:100%;height:46px;border-radius:14px;color:var(--seal);font-weight:600;margin-top:8px}
+.more{font-size:13px;color:var(--muted);margin:2px 0 12px}
+
+/* 提示 */
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translate(-50%,20px);background:var(--ink);color:var(--paper);border-radius:14px;padding:12px 14px 12px 16px;font-size:14px;display:flex;gap:14px;align-items:center;opacity:0;pointer-events:none;transition:.25s;z-index:20;max-width:calc(100% - 32px);white-space:nowrap}
+.toast.show{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.toast button{color:var(--seal-soft);font-weight:600}
+
+/* 首次設定 */
+.setup{padding-top:12vh}
+.setup .seal{width:72px;height:72px;border-radius:18px;background:var(--seal);color:#F3EBDD;display:grid;place-items:center;font-family:var(--serif);font-weight:800;font-size:36px;margin-bottom:22px}
+.setup h1{font-family:var(--serif);font-size:30px;margin:0 0 8px}
+.setup p{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 26px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 首次設定 -->
+  <section id="setup" class="setup hidden">
+    <div class="seal">繳</div>
+    <h1>繳費提醒</h1>
+    <p>輸入你在 Apps Script 設定的密碼。<br>只需要設定一次。</p>
+    <div class="f" id="urlField"><label>雲端網址（Apps Script）</label><input id="setUrl" placeholder="https://script.google.com/macros/s/.../exec" autocapitalize="off" autocorrect="off"></div>
+    <div class="f"><label>密碼</label><input id="setToken" type="password" autocapitalize="off" autocorrect="off"></div>
+    <button class="primary" id="setGo">開始使用</button>
+    <p id="setErr" style="color:var(--seal);margin-top:14px"></p>
+  </section>
+
+  <!-- 主畫面 -->
+  <main id="app" class="hidden">
+    <div class="top"><span id="today"></span><button class="iconbtn" id="gear" aria-label="設定"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button></div>
+
+    <div id="installHint" class="banner hidden">要收到通知：用 Safari 打開這頁 → 點「分享」→「加入主畫面」，再從主畫面的圖示開啟。</div>
+
+    <div id="hero" class="hero"></div>
+    <div id="pending"></div>
+    <div id="loans"></div>
+    <h2 id="othersTitle">所有項目</h2>
+    <div id="others" class="list"></div>
+    <p class="sync" id="sync"></p>
+  </main>
+</div>
+
+<div class="dock hidden" id="dock"><div class="in">
+  <button class="add" id="addBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>新增項目</button>
+  <button class="bell" id="bellBtn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg><span>開啟通知</span></button>
+</div></div>
+
+<!-- 編輯項目 -->
+<div id="edit">
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet"><div class="in">
+    <div class="grab"></div>
+    <h3 id="eTitle">新增項目</h3>
+    <div class="f"><label>名稱</label><input id="eName" placeholder="例如：國泰信用卡"></div>
+    <div class="two">
+      <div class="f"><label>每月幾號開始提醒（帳單日）</label><input id="eBill" type="number" inputmode="numeric" min="1" max="31"></div>
+      <div class="f"><label>截止日（幾號）</label><input id="eDue" type="number" inputmode="numeric" min="1" max="31"></div>
+    </div>
+    <div class="f"><label>截止日在</label><div class="seg" id="eNext"><button data-v="0" class="on">當月</button><button data-v="1">下個月</button></div></div>
+    <div class="f"><label>金額（選填）</label><input id="eAmt" type="number" inputmode="numeric" placeholder="不固定可留空"></div>
+    <div class="two">
+      <div class="f"><label>總期數（選填）</label><input id="eTotal" type="number" inputmode="numeric" placeholder="貸款、分期才填"></div>
+      <div class="f"><label>第 1 期月份</label><input id="eStart" type="month"></div>
+    </div>
+    <div class="f"><label>備註（選填）</label><input id="eNote" placeholder="例如：自動扣款、要轉帳兩筆"></div>
+    <div class="f"><label>顏色</label><div class="sw" id="eColor"></div></div>
+    <div class="preview" id="ePrev"></div>
+    <button class="primary" id="eSave">儲存</button>
+    <button class="ghost" id="eUndo">本期改回「未繳」</button>
+    <button class="ghost" id="eDel">刪除這個項目</button>
+  </div></div>
+</div>
+
+<!-- 設定 -->
+<div id="settings">
+  <div class="sheet-bg" data-close></div>
+  <div class="sheet"><div class="in">
+    <div class="grab"></div>
+    <h3>設定</h3>
+    <div class="preview" id="sInfo"></div>
+    <button class="primary" id="sLocal">在這支手機顯示一則測試通知</button>
+    <button class="ghost" id="sReset">登出（重新輸入網址與密碼）</button>
+  </div></div>
+</div>
+
+<div class="toast" id="toast"><span id="toastMsg"></span><button id="toastBtn">復原</button></div>
+
+<script src="cycle.js"></script>
+<script>
+/* ===== 設定：把 Apps Script 網址貼在這裡（貼了之後手機只要輸入密碼）===== */
+const GAS_URL = '';
+/* ===== 推播公鑰（不用改）===== */
+const VAPID_PUBLIC = 'BO24JhdZRx-7Irdg-iCv6c7bB19lOHC6FzQXz0FYXKjtCwHMP0i8ZqOwFtxMAoYHgpJX1VgZVTu4lcyhsfTcXtc';
+
+const COLORS = { red: '#B8322A', ink: '#3B352D', blue: '#2F5D8A', green: '#3E6B4E', amber: '#A8701A', plum: '#7A3E66' };
+const WEEK = '日一二三四五六';
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const money = (n) => 'NT$' + Number(n).toLocaleString('en-US');
+const ls = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+};
+
+let cfg = ls.get('cfg', { url: GAS_URL, token: '' });
+if (GAS_URL) cfg.url = GAS_URL;
+let state = ls.get('state', { items: [], paid: {} });
+let lastSync = ls.get('lastSync', 0);
+
+/* ---------- 雲端 ---------- */
+async function api(action, data) {
+  const body = JSON.stringify(Object.assign({ action, token: cfg.token }, data || {}));
+  const r = await fetch(cfg.url, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body });
+  const j = await r.json();
+  if (!j.ok) throw new Error(j.error || 'error');
+  if (j.items) { state = { items: j.items, paid: j.paid || {} }; ls.set('state', state); lastSync = Date.now(); ls.set('lastSync', lastSync); }
+  return j;
+}
+async function refresh() {
+  try { await api('state'); render(); }
+  catch (e) {
+    if (e.message === 'auth') { showSetup('密碼不對，請重新輸入'); return; }
+    $('#sync').textContent = '目前離線，顯示上次的資料';
+  }
+}
+
+/* ---------- 畫面 ---------- */
+const colorOf = (it) => COLORS[it.color] || COLORS.red;
+function chip(c, it) {
+  const n = c.daysLeft;
+  if (n < 0) return `<span class="chip over">逾期 ${-n} 天</span>`;
+  if (n === 0) return `<span class="chip over">今天${it.billDay === it.dueDay ? '' : '截止'}</span>`;
+  if (n <= 3) return `<span class="chip hot">剩 ${n} 天</span>`;
+  if (n <= 7) return `<span class="chip warn">剩 ${n} 天</span>`;
+  return `<span class="chip">剩 ${n} 天</span>`;
+}
+
+function render() {
+  const t = Bills.today();
+  const now = new Date();
+  $('#today').textContent = `${t.m}月${t.d}日　週${WEEK[now.getDay()]}`;
+  const items = state.items || [];
+  const list = Bills.allPending(items, state.paid, t);
+
+  // 標題
+  const hero = $('#hero');
+  if (list.length) {
+    const urgent = list.filter((x) => x.c.daysLeft <= 3).length;
+    hero.className = 'hero';
+    hero.innerHTML = `<div class="n">${list.length}</div><div class="t">筆待繳<small>${urgent ? `其中 ${urgent} 筆 3 天內到期` : '時間都還夠'}</small></div>`;
+  } else {
+    hero.className = 'hero clear';
+    hero.innerHTML = `<div class="n">0</div><div class="t">全部繳清<small>有新帳單會通知你</small></div>`;
+  }
+
+  // 待繳
+  $('#pending').innerHTML = list.length ? list.map(({ item: it, c }) => {
+    const due = Bills.fromDn(c.dueDn);
+    const same = it.billDay === it.dueDay && !it.dueNext;
+    const sub = [];
+    if (c.period) sub.push(`第 ${c.period} / ${it.total} 期`);
+    else sub.push(`${Bills.md(c.billDn)} 出帳`);
+    if (it.note) sub.push(esc(it.note));
+    return `<article class="bill" style="--c:${colorOf(it)}" data-id="${it.id}" data-k="${c.key}">
+      <div class="date"><div class="m">${due.m}月</div><div class="d">${due.d}</div><div class="l">${same ? '匯款日' : '截止'}</div></div>
+      <div class="info">
+        <div class="name">${esc(it.name)} ${chip(c, it)}</div>
+        <div class="meta">${sub.join('・')}</div>
+        ${it.amount ? `<div class="amt">${money(it.amount)}</div>` : ''}
+      </div>
+      <button class="pay" data-pay>${same ? '已匯款' : '已繳清'}</button>
+      <div class="stamp">繳清</div>
+    </article>`;
+  }).join('') : `<div class="allclear"><b>這個月目前都繳完了</b>下一筆帳單出來時會提醒你</div>`;
+
+  // 有期數的項目：進度
+  const loans = items.filter((it) => it.total && it.start);
+  $('#loans').innerHTML = loans.map((it) => {
+    const done = state.paid[it.id] || {};
+    let paidN = 0;
+    const cur = Bills.current(it, t);
+    const s = Bills.parse(it.start);
+    const end = Bills.addM(s.y, s.m, it.total - 1);
+    const startKey = it.start, endKey = Bills.key(end.y, end.m);
+    let cells = '<span></span>' + Array.from({ length: 12 }, (_, i) => `<span class="mh">${i + 1}</span>`).join('');
+    for (let y = s.y; y <= end.y; y++) {
+      cells += `<span class="yl">${y}</span>`;
+      for (let m = 1; m <= 12; m++) {
+        const k = Bills.key(y, m);
+        if (k < startKey || k > endKey) { cells += '<span class="cell void"></span>'; continue; }
+        const p = !!done[k]; if (p) paidN++;
+        cells += `<button class="cell${p ? ' paid' : ''}${k === cur.key ? ' now' : ''}" data-cell="${it.id}|${k}" aria-label="${y}年${m}月"></button>`;
+      }
+    }
+    const pct = Math.round((paidN / it.total) * 100);
+    return `<h2>${esc(it.name)}進度</h2><div class="loan">
+      <div class="row"><div class="big">${paidN}<small> / ${it.total} 期</small></div><div class="chip">${pct}%</div></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="kv">
+        <div>已還${it.amount ? `<b>${(paidN * it.amount / 10000).toLocaleString()} 萬</b>` : `<b>${paidN} 期</b>`}</div>
+        <div>剩餘${it.amount ? `<b>${((it.total - paidN) * it.amount / 10000).toLocaleString()} 萬</b>` : `<b>${it.total - paidN} 期</b>`}</div>
+        <div>預計結清<b>${end.y}/${end.m}</b></div>
+      </div>
+      <div class="gridwrap"><div class="grid">${cells}</div></div>
+      <div class="hint">每格是一個月，紅色＝已匯。點格子可以補登或取消。</div>
+    </div>`;
+  }).join('');
+
+  // 所有項目
+  $('#others').innerHTML = items.length ? items.map((it) => {
+    const cur = Bills.current(it, t);
+    const pend = Bills.pending(it, state.paid, t);
+    const nx = Bills.next(it, t);
+    const curPaid = state.paid[it.id] && state.paid[it.id][cur.key];
+    const due = it.dueNext ? `次月 ${it.dueDay} 號` : `${it.dueDay} 號`;
+    const rule = it.billDay === it.dueDay && !it.dueNext ? `每月 ${it.billDay} 號` : `每月 ${it.billDay} 號出帳・${due}截止`;
+    let st;
+    if (pend.length) st = `<span class="st wait" style="color:var(--seal)">待繳</span>`;
+    else if (curPaid) st = `<span class="st">本期已繳 ✓</span>`;
+    else st = `<span class="st wait">${nx ? Bills.md(nx.billDn) + ' 出帳' : '已結束'}</span>`;
+    return `<button class="item" data-edit="${it.id}" style="--c:${colorOf(it)}"><span class="dot"></span><span><div class="nm">${esc(it.name)}</div><div class="sub">${rule}</div></span>${st}</button>`;
+  }).join('') : `<div class="item"><span class="sub">還沒有項目，按下方「新增項目」</span></div>`;
+
+  $('#sync').textContent = lastSync ? `已同步 ${new Date(lastSync).toLocaleString('zh-TW', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })}` : '';
+
+  if (navigator.setAppBadge) { list.length ? navigator.setAppBadge(list.length).catch(() => {}) : navigator.clearAppBadge().catch(() => {}); }
+}
+
+/* ---------- 繳清 ---------- */
+let undoFn = null, toastTimer;
+function toast(msg, undo) {
+  $('#toastMsg').textContent = msg;
+  $('#toastBtn').classList.toggle('hidden', !undo);
+  undoFn = undo || null;
+  $('#toast').classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 4500);
+}
+$('#toastBtn').onclick = () => { $('#toast').classList.remove('show'); if (undoFn) undoFn(); };
+
+async function setPaid(id, k, paid) {
+  state.paid[id] = state.paid[id] || {};
+  if (paid) state.paid[id][k] = Date.now(); else delete state.paid[id][k];
+  ls.set('state', state);
+  try { await api('setPaid', { id, cycle: k, paid }); }
+  catch (e) { toast('同步失敗，網路恢復後請再按一次'); }
+  render();
+}
+
+document.addEventListener('click', (e) => {
+  const pay = e.target.closest('[data-pay]');
+  if (pay) {
+    const card = pay.closest('.bill');
+    const { id, k } = card.dataset;
+    const it = state.items.find((x) => x.id === id);
+    card.classList.add('stamped');
+    if (navigator.vibrate) navigator.vibrate(15);
+    setTimeout(() => setPaid(id, k, true), 1100);
+    const ym = Bills.parse(k);
+    toast(`${it.name}・${ym.m}月 已繳清`, () => setPaid(id, k, false));
+    return;
+  }
+  const cell = e.target.closest('[data-cell]');
+  if (cell) {
+    const [id, k] = cell.dataset.cell.split('|');
+    const ym = Bills.parse(k);
+    const was = !!(state.paid[id] && state.paid[id][k]);
+    if (confirm(`${ym.y}年${ym.m}月 標記為「${was ? '未匯' : '已匯'}」？`)) setPaid(id, k, !was);
+    return;
+  }
+  const ed = e.target.closest('[data-edit]');
+  if (ed) { openEdit(ed.dataset.edit); return; }
+  if (e.target.closest('[data-close]')) closeSheets();
+});
+
+/* ---------- 新增 / 編輯 ---------- */
+let editing = null, eNext = 0, eColor = 'red';
+function sheet(id, on) { document.getElementById(id).classList.toggle('open', on); }
+function closeSheets() { sheet('edit', false); sheet('settings', false); }
+
+$('#eColor').innerHTML = Object.entries(COLORS).map(([k, v]) => `<button data-col="${k}" style="--c:${v}" aria-label="${k}"></button>`).join('');
+$('#eColor').onclick = (e) => { const b = e.target.closest('[data-col]'); if (b) { eColor = b.dataset.col; paintEdit(); } };
+$('#eNext').onclick = (e) => { const b = e.target.closest('[data-v]'); if (b) { eNext = +b.dataset.v; paintEdit(); } };
+['eName', 'eBill', 'eDue', 'eAmt', 'eTotal', 'eStart'].forEach((i) => document.getElementById(i).addEventListener('input', paintEdit));
+
+function readForm() {
+  const n = (id) => { const v = parseInt(document.getElementById(id).value, 10); return isNaN(v) ? null : v; };
+  return {
+    name: $('#eName').value.trim(), billDay: n('eBill'), dueDay: n('eDue'), dueNext: !!eNext,
+    amount: n('eAmt'), total: n('eTotal'), start: $('#eStart').value || null, note: $('#eNote').value.trim(), color: eColor
+  };
+}
+function paintEdit() {
+  $('#eNext').querySelectorAll('button').forEach((b) => b.classList.toggle('on', +b.dataset.v === eNext));
+  $('#eColor').querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.dataset.col === eColor));
+  const f = readForm();
+  if (!f.billDay || !f.dueDay) { $('#ePrev').textContent = '填好日期後，這裡會顯示提醒方式'; return; }
+  const same = f.billDay === f.dueDay && !f.dueNext;
+  $('#ePrev').innerHTML = same
+    ? `每月 <b>${f.billDay} 號</b>開始提醒，每天 13:00 通知，直到你按「已匯款」。`
+    : `每月 <b>${f.billDay} 號</b>出帳開始提醒，${f.dueNext ? '下個月' : '當月'} <b>${f.dueDay} 號</b>截止。每天 13:00 通知，直到你按「已繳清」。`;
+}
+function openEdit(id) {
+  editing = id ? state.items.find((x) => x.id === id) : null;
+  const it = editing || {};
+  $('#eTitle').textContent = editing ? '編輯項目' : '新增項目';
+  $('#eName').value = it.name || ''; $('#eBill').value = it.billDay || ''; $('#eDue').value = it.dueDay || '';
+  $('#eAmt').value = it.amount || ''; $('#eTotal').value = it.total || ''; $('#eStart').value = it.start || ''; $('#eNote').value = it.note || '';
+  eNext = it.dueNext ? 1 : 0; eColor = it.color || Object.keys(COLORS)[state.items.length % 6];
+  $('#eDel').classList.toggle('hidden', !editing);
+  const t = Bills.today();
+  const canUndo = editing && state.paid[it.id] && state.paid[it.id][Bills.current(it, t).key];
+  $('#eUndo').classList.toggle('hidden', !canUndo);
+  paintEdit(); sheet('edit', true);
+}
+$('#addBtn').onclick = () => openEdit(null);
+$('#eSave').onclick = async () => {
+  const f = readForm();
+  if (!f.name) return alert('請輸入名稱');
+  if (!f.billDay || f.billDay < 1 || f.billDay > 31 || !f.dueDay || f.dueDay < 1 || f.dueDay > 31) return alert('日期請填 1～31');
+  if (f.total && !f.start) return alert('有填總期數的話，請選第 1 期的月份');
+  const it = Object.assign({}, editing || { id: 'i' + Date.now().toString(36) }, f);
+  Object.keys(it).forEach((k) => (it[k] === null || it[k] === '') && delete it[k]);
+  if (!editing || editing.billDay !== it.billDay || editing.dueDay !== it.dueDay || editing.dueNext !== it.dueNext) {
+    if (!editing) it.since = Bills.sinceFor(it);
+  }
+  const i = state.items.findIndex((x) => x.id === it.id);
+  if (i >= 0) state.items[i] = it; else state.items.push(it);
+  closeSheets(); render();
+  try { await api('saveItem', { item: it }); render(); toast('已儲存'); }
+  catch (e) { toast('儲存失敗，請檢查網路'); }
+};
+$('#eDel').onclick = async () => {
+  if (!editing || !confirm(`確定刪除「${editing.name}」？`)) return;
+  const id = editing.id;
+  state.items = state.items.filter((x) => x.id !== id);
+  closeSheets(); render();
+  try { await api('deleteItem', { id }); render(); toast('已刪除'); } catch (e) { toast('刪除失敗，請檢查網路'); }
+};
+$('#eUndo').onclick = () => {
+  const it = editing; closeSheets();
+  setPaid(it.id, Bills.current(it, Bills.today()).key, false);
+};
+
+/* ---------- 通知 ---------- */
+const standalone = () => window.navigator.standalone === true || matchMedia('(display-mode: standalone)').matches;
+const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+function b64u(s) { const p = '='.repeat((4 - (s.length % 4)) % 4); const b = atob((s + p).replace(/-/g, '+').replace(/_/g, '/')); return Uint8Array.from(b, (c) => c.charCodeAt(0)); }
+
+async function pushState() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return 'unsupported';
+  if (Notification.permission !== 'granted') return Notification.permission;
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  return sub ? 'on' : 'default';
+}
+async function paintBell() {
+  const s = await pushState().catch(() => 'unsupported');
+  const b = $('#bellBtn');
+  b.classList.toggle('on', s === 'on');
+  b.querySelector('span').textContent = s === 'on' ? '通知已開啟' : '開啟通知';
+  $('#installHint').classList.toggle('hidden', !(isIOS && !standalone()));
+  return s;
+}
+$('#bellBtn').onclick = async () => {
+  if (isIOS && !standalone()) return alert('請先「加入主畫面」，再從主畫面的圖示開啟，才能開啟通知。');
+  if (!('PushManager' in window)) return alert('這個瀏覽器不支援推播。iPhone 需要 iOS 16.4 以上，並從主畫面圖示開啟。');
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') return alert('通知被關閉了。請到 iPhone「設定 → 通知 → 繳費」打開。');
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(VAPID_PUBLIC) });
+    await api('subscribe', { sub: sub.toJSON() });
+    toast('通知已開啟，每天 13:00 提醒');
+  } catch (e) { alert('開啟失敗：' + e.message); }
+  paintBell();
+};
+async function resyncSub() { // 每次打開都確認雲端有這支手機的訂閱
+  try {
+    if ((await pushState()) !== 'on') return;
+    const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+    if (sub) api('subscribe', { sub: sub.toJSON() }).catch(() => {});
+  } catch (e) {}
+}
+
+/* ---------- 設定 ---------- */
+$('#gear').onclick = async () => {
+  const s = await pushState().catch(() => 'unsupported');
+  $('#sInfo').innerHTML = `通知狀態：<b>${{ on: '已開啟', default: '未開啟', denied: '被關閉（到 iPhone 設定開啟）', unsupported: '不支援（請從主畫面圖示開啟）' }[s] || s}</b><br>提醒時間：每天 13:00 左右<br>資料位置：Google Apps Script`;
+  sheet('settings', true);
+};
+$('#sLocal').onclick = async () => {
+  try {
+    if (Notification.permission !== 'granted') return alert('請先按下方「開啟通知」');
+    const reg = await navigator.serviceWorker.ready;
+    await reg.showNotification('繳費提醒（測試）', { body: '看到這則就代表手機的通知權限正常', icon: 'icon-180.png', tag: 'test' });
+  } catch (e) { alert(e.message); }
+};
+$('#sReset').onclick = () => { if (confirm('確定登出？')) { cfg.token = ''; ls.set('cfg', cfg); location.reload(); } };
+
+/* ---------- 啟動 ---------- */
+function showSetup(err) {
+  $('#setup').classList.remove('hidden'); $('#app').classList.add('hidden'); $('#dock').classList.add('hidden');
+  $('#urlField').classList.toggle('hidden', !!GAS_URL);
+  $('#setUrl').value = cfg.url || '';
+  $('#setErr').textContent = err || '';
+}
+$('#setGo').onclick = async () => {
+  if (!GAS_URL) cfg.url = $('#setUrl').value.trim();
+  cfg.token = $('#setToken').value.trim();
+  if (!cfg.url || !cfg.token) return ($('#setErr').textContent = '請填完整');
+  $('#setGo').textContent = '連線中…';
+  try { await api('state'); ls.set('cfg', cfg); start(); }
+  catch (e) { $('#setErr').textContent = e.message === 'auth' ? '密碼不對' : '連不上，請檢查網址'; }
+  $('#setGo').textContent = '開始使用';
+};
+function start() {
+  $('#setup').classList.add('hidden'); $('#app').classList.remove('hidden'); $('#dock').classList.remove('hidden');
+  render(); paintBell(); refresh(); resyncSub();
+}
+
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
+document.addEventListener('visibilitychange', () => { if (!document.hidden && cfg.token) refresh(); });
+if (cfg.url && cfg.token) start(); else showSetup();
+</script>
+</body>
+</html>
